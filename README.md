@@ -1,84 +1,65 @@
-<div align="center">
+## `heatmap-wasm`
 
-  <h1><code>wasm-pack-template</code></h1>
+Rust → WebAssembly metrics library intended to be **installed as an npm package** and imported from a **module Web Worker**.
 
-  <strong>A template for kick starting a Rust and WebAssembly project using <a href="https://github.com/rustwasm/wasm-pack">wasm-pack</a>.</strong>
+Currently exported metrics:
+- `profit_factor(pnls: Float64Array) -> number`
+- `profit_factor_batch(gross_profits: Float64Array, gross_losses_abs: Float64Array) -> Float64Array`
 
-  <p>
-    <a href="https://travis-ci.org/rustwasm/wasm-pack-template"><img src="https://img.shields.io/travis/rustwasm/wasm-pack-template.svg?style=flat-square" alt="Build Status" /></a>
-  </p>
+### Build an installable npm package
 
-  <h3>
-    <a href="https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html">Tutorial</a>
-    <span> | </span>
-    <a href="https://discordapp.com/channels/442252698964721669/443151097398296587">Chat</a>
-  </h3>
+This repo uses [`wasm-pack`](https://github.com/rustwasm/wasm-pack). Build output goes to `pkg/` (that folder is what gets published to npm).
 
-  <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
-</div>
+```bash
+# For React apps using a bundler (Vite / webpack / CRA-style builds):
+wasm-pack build --release --target bundler
 
-## About
-
-[**📚 Read this template tutorial! 📚**][template-docs]
-
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting package to NPM.
-
-Be sure to check out [other `wasm-pack` tutorials online][tutorials] for other
-templates and usages of `wasm-pack`.
-
-[tutorials]: https://rustwasm.github.io/docs/wasm-pack/tutorials/index.html
-[template-docs]: https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html
-
-## 🚴 Usage
-
-### 🐑 Use `cargo generate` to Clone this Template
-
-[Learn more about `cargo generate` here.](https://github.com/ashleygwilliams/cargo-generate)
-
-```
-cargo generate --git https://github.com/rustwasm/wasm-pack-template.git --name my-project
-cd my-project
+# If you need a "no-bundler" build (served directly on the web):
+# wasm-pack build --release --target web
 ```
 
-### 🛠️ Build with `wasm-pack build`
+### Publish to npm
 
-```
-wasm-pack build
-```
-
-### 🔬 Test in Headless Browsers with `wasm-pack test`
-
-```
-wasm-pack test --headless --firefox
+```bash
+wasm-pack publish --access public
 ```
 
-### 🎁 Publish to NPM with `wasm-pack publish`
+### Consume from a module Web Worker
 
+In your frontend repo:
+
+```bash
+npm i heatmap-wasm
 ```
-wasm-pack publish
+
+In your worker (must be an **ES module worker**):
+
+```js
+import init, { profit_factor, profit_factor_batch } from "heatmap-wasm";
+
+let ready;
+function ensureReady() {
+  if (!ready) ready = init(); // instantiates the .wasm once
+  return ready;
+}
+
+self.onmessage = async (e) => {
+  await ensureReady();
+
+  const { pnls, grossProfits, grossLossesAbs } = e.data;
+  const pf = profit_factor(pnls);
+  const pfs = profit_factor_batch(grossProfits, grossLossesAbs);
+
+  self.postMessage({ pf, pfs });
+};
 ```
 
-## 🔋 Batteries Included
+In your React app code (Vite/webpack-style):
 
-* [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) for communicating
-  between WebAssembly and JavaScript.
-* [`console_error_panic_hook`](https://github.com/rustwasm/console_error_panic_hook)
-  for logging panic messages to the developer console.
-* `LICENSE-APACHE` and `LICENSE-MIT`: most Rust projects are licensed this way, so these are included for you
+```js
+const worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
+```
 
-## License
+### License
 
-Licensed under either of
-
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.
+Dual-licensed under Apache-2.0 and MIT (see `LICENSE_APACHE` and `LICENSE_MIT`).
