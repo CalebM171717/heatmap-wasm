@@ -24,23 +24,6 @@ wasm-pack build --release --target bundler
 wasm-pack publish --access public
 ```
 
-### Distribute without npm: GitHub Releases assets (recommended for teams)
-
-This repo can automatically attach an installable **npm tarball** to each GitHub Release when you push a tag like `v0.1.0`.
-
-- **Create a release**:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-- **Install from the release asset URL** (in your other repo):
-
-```bash
-npm i https://github.com/calebmccullough/heatmap-wasm/releases/download/v0.1.0/heatmap-wasm-0.1.0.tgz
-```
-
 ### Consume from a module Web Worker
 
 In your frontend repo:
